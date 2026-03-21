@@ -41,7 +41,10 @@ Create a Python 3.11+ virtual environment, install the package, and run the API 
 python3.11 -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
+cp .env.example .env
 ai-content-agent
 ```
 
 The bootstrap service exposes `GET /health`.
+
+All runtime configuration is loaded from `.env`. Missing required values fail at startup with a configuration error.

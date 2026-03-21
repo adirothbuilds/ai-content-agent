@@ -2,12 +2,15 @@ import os
 
 import uvicorn
 
+from ai_content_agent.settings import get_settings
+
 
 def run() -> None:
+    settings = get_settings()
     uvicorn.run(
         "ai_content_agent.app:app",
-        host=os.getenv("APP_HOST", "127.0.0.1"),
-        port=int(os.getenv("APP_PORT", "8000")),
+        host=settings.app_host,
+        port=settings.app_port,
         reload=False,
     )
 
