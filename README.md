@@ -32,3 +32,16 @@ AI Content Agent is a Telegram-first, human-in-the-loop system for turning journ
 ## Status
 
 This repo currently contains the MVP V1 planning package and issue backlog. Implementation follows the plan in `PLAN.md`.
+
+## Local Development
+
+Create a Python 3.11+ virtual environment, install the package, and run the API server:
+
+```bash
+python3.11 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+ai-content-agent
+```
+
+The bootstrap service exposes `GET /health`.
