@@ -1,0 +1,63 @@
+name: Feature Task
+description: Track a product or backend implementation task for MVP V1.
+title: "[Feature] "
+labels:
+  - feature
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Describe the task to implement.
+      placeholder: Implement the Telegram idea selection and draft approval flow.
+    validations:
+      required: true
+  - type: dropdown
+    id: milestone
+    attributes:
+      label: Milestone
+      options:
+        - Foundation
+        - Telegram UI and Journal Capture
+        - GitHub Ingestion and Retrieval
+        - Agents and Content Generation
+        - Publish Flow and Memory Growth
+        - Evaluation and Observability
+        - Optional Eventing Hardening
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Define what is included in this task.
+      placeholder: List the workflow steps, modules, or endpoints this task should cover.
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: List blocking issues or prerequisites.
+      placeholder: Depends on settings layer and Telegram webhook integration.
+    validations:
+      required: false
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance Criteria
+      description: Provide testable completion conditions.
+      placeholder: |
+        - User can trigger the flow from Telegram
+        - Draft generation starts from the selected idea
+        - Workflow state is persisted
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Optional extra implementation notes or references.
+      placeholder: Reference PLAN.md and ROADMAP.md wording where relevant.
+    validations:
+      required: false

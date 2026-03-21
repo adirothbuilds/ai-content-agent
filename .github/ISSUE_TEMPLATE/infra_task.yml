@@ -1,0 +1,57 @@
+name: Infra Task
+description: Track infrastructure, configuration, deployment, observability, or optional eventing work for MVP V1.
+title: "[Infra] "
+labels:
+  - infra
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Describe the infrastructure or platform task.
+      placeholder: Add Docker Compose for local deployment with mongodb, server, and cloudflared.
+    validations:
+      required: true
+  - type: dropdown
+    id: subsystem
+    attributes:
+      label: Subsystem
+      options:
+        - Configuration
+        - Deployment
+        - MongoDB
+        - Cloudflare Tunnel
+        - Telegram Webhook
+        - Logging and Tracing
+        - Benchmark Infrastructure
+        - NATS
+        - General
+    validations:
+      required: true
+  - type: textarea
+    id: runtime_impact
+    attributes:
+      label: Runtime Impact
+      description: Explain what runtime behavior, operability, or deployment surface this changes.
+      placeholder: Enables local self-hosted deployment and provides the public ingress path for Telegram.
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: List blocking tasks or prerequisites.
+      placeholder: Depends on initial FastAPI skeleton and .env settings support.
+    validations:
+      required: false
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance Criteria
+      description: Provide testable completion conditions.
+      placeholder: |
+        - Service starts correctly
+        - Config is environment-driven
+        - Behavior is documented for local deployment
+    validations:
+      required: true

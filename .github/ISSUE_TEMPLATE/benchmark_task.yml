@@ -1,0 +1,58 @@
+name: Benchmark Task
+description: Track evaluation dataset, benchmark, or provider comparison work for MVP V1.
+title: "[Benchmark] "
+labels:
+  - benchmark
+body:
+  - type: dropdown
+    id: target_agent
+    attributes:
+      label: Target Agent
+      options:
+        - Journal Assist
+        - Idea Agent
+        - SEO Agent
+        - Writer Agent
+        - Remix Agent
+        - Shared Benchmark Infrastructure
+    validations:
+      required: true
+  - type: textarea
+    id: benchmark_goals
+    attributes:
+      label: Benchmark Goals
+      description: What should this benchmark prove or compare?
+      placeholder: Measure novelty, grounding, and distinctness for Idea Agent outputs.
+    validations:
+      required: true
+  - type: textarea
+    id: dataset_scope
+    attributes:
+      label: Dataset Scope
+      description: Describe the scenarios and fixture types this task should cover.
+      placeholder: Include regression cases, edge cases, and representative content samples.
+    validations:
+      required: true
+  - type: textarea
+    id: scoring_criteria
+    attributes:
+      label: Scoring Criteria
+      description: Define how outputs should be evaluated.
+      placeholder: |
+        - Grounding score
+        - Novelty score
+        - Distinctness score
+        - Latency and cost capture
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance Criteria
+      description: Provide testable completion conditions.
+      placeholder: |
+        - Fixtures are stored and versioned
+        - Scores can be reproduced
+        - Candidate providers can run on the same benchmark
+    validations:
+      required: true
