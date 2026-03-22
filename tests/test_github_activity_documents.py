@@ -54,6 +54,10 @@ def test_build_github_activity_documents_uses_shared_schema(monkeypatch) -> None
     monkeypatch.setattr(Path, "is_file", lambda self: False)
     for key, value in ENVIRONMENT.items():
         monkeypatch.setenv(key, value)
+    monkeypatch.setattr(
+        "ai_content_agent.services.github_activity.build_embedding_vector",
+        lambda _: [0.2] * 12,
+    )
     reset_settings_cache()
 
     activity = {
@@ -109,6 +113,10 @@ def test_persist_github_activity_documents_saves_all_documents(monkeypatch) -> N
     monkeypatch.setattr(Path, "is_file", lambda self: False)
     for key, value in ENVIRONMENT.items():
         monkeypatch.setenv(key, value)
+    monkeypatch.setattr(
+        "ai_content_agent.services.github_activity.build_embedding_vector",
+        lambda _: [0.2] * 12,
+    )
     reset_settings_cache()
 
     repository = FakeGitHubActivityRepository()

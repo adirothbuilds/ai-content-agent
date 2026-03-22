@@ -157,6 +157,10 @@ def test_telegram_webhook_runs_guided_journal_session(monkeypatch) -> None:
     monkeypatch.setattr(Path, "is_file", lambda self: False)
     for key, value in ENVIRONMENT.items():
         monkeypatch.setenv(key, value)
+    monkeypatch.setattr(
+        "ai_content_agent.services.journal_entries.build_embedding_vector",
+        lambda _: [0.1] * 12,
+    )
     reset_settings_cache()
     repository = FakeJournalEntryRepository()
     set_journal_entry_repository(repository)
@@ -240,6 +244,14 @@ def test_telegram_webhook_ai_assist_requires_confirmation(monkeypatch) -> None:
     monkeypatch.setattr(Path, "is_file", lambda self: False)
     for key, value in ENVIRONMENT.items():
         monkeypatch.setenv(key, value)
+    monkeypatch.setattr(
+        "ai_content_agent.services.journal_entries.build_embedding_vector",
+        lambda _: [0.1] * 12,
+    )
+    monkeypatch.setattr(
+        "ai_content_agent.journal_sessions.generate_journal_assist_draft",
+        lambda session: _fake_journal_assist_draft(),
+    )
     reset_settings_cache()
     repository = FakeJournalEntryRepository()
     set_journal_entry_repository(repository)
@@ -334,3 +346,19 @@ def test_telegram_webhook_ai_assist_requires_confirmation(monkeypatch) -> None:
     assert save_response.json()["dispatch"]["action"] == "saved"
     assert save_response.json()["dispatch"]["journal_entry"]["metadata"]["ai_assisted"] is True
     assert len(repository.documents) == 1
+
+
+def _fake_journal_assist_draft():
+    return type(
+        "Draft",
+        (),
+        {
+            "work_summary": "Worked on Telegram flows.",
+            "problem_solved": "Users needed guided capture.",
+            "tools_used": "FastAPI and Pydantic.",
+            "lesson_learned": "State should stay outside the route.",
+            "outcome": "A reviewable journal draft.",
+            "why_it_matters": "It improves capture quality.",
+            "gaps": ["What problem did you solve?"],
+        },
+    )()

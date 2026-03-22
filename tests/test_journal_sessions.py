@@ -55,7 +55,25 @@ def test_journal_session_cancel_clears_state() -> None:
     assert after_cancel.action == "missing"
 
 
-def test_journal_session_ai_assist_requires_explicit_confirmation_before_save() -> None:
+def test_journal_session_ai_assist_requires_explicit_confirmation_before_save(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        "ai_content_agent.journal_sessions.generate_journal_assist_draft",
+        lambda session: type(
+            "Draft",
+            (),
+            {
+                "work_summary": "Built webhook parsing.",
+                "problem_solved": "Webhook payloads were inconsistent.",
+                "tools_used": "FastAPI and Pydantic.",
+                "lesson_learned": "Keep parsing separate from routing.",
+                "outcome": "A stable webhook contract.",
+                "why_it_matters": "It keeps the Telegram UX grounded in real work.",
+                "gaps": ["What problem did you solve?"],
+            },
+        )(),
+    )
     store = JournalSessionStore()
     store.start_session(chat_id=1, user_id=2)
     store.handle_message(chat_id=1, user_id=2, text="built webhook parsing")

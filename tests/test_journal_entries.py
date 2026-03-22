@@ -32,6 +32,10 @@ def test_build_journal_entry_document_contains_metadata_and_embedding(monkeypatc
     monkeypatch.setenv("REMIX_MODEL", "claude-sonnet-4")
     monkeypatch.setenv("EMBEDDING_PROVIDER", "openai")
     monkeypatch.setenv("EMBEDDING_MODEL", "text-embedding-3-large")
+    monkeypatch.setattr(
+        "ai_content_agent.services.journal_entries.build_embedding_vector",
+        lambda _: [0.1] * 12,
+    )
     reset_settings_cache()
 
     session = JournalSession(

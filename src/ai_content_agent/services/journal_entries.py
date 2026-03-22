@@ -2,7 +2,8 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 from ai_content_agent.embeddings import build_embedding_vector
-from ai_content_agent.journal_sessions import JOURNAL_PROMPTS, JournalSession
+from ai_content_agent.journal_schema import JOURNAL_PROMPTS
+from ai_content_agent.journal_sessions import JournalSession
 from ai_content_agent.repositories.journal_entries import MongoJournalEntryRepository
 from ai_content_agent.settings import get_settings
 

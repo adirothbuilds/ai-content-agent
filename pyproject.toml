@@ -13,8 +13,12 @@ authors = [
   { name = "Adi Roth" }
 ]
 dependencies = [
+  "agno>=1.8,<2.0",
+  "anthropic>=0.60,<1.0",
   "fastapi>=0.115,<1.0",
+  "google-genai>=1.30,<2.0",
   "httpx>=0.28,<1.0",
+  "openai>=1.99,<2.0",
   "pymongo>=4.10,<5.0",
   "pydantic-settings>=2.7,<3.0",
   "uvicorn[standard]>=0.34,<1.0",

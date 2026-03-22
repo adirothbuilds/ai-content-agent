@@ -1,12 +1,42 @@
-from hashlib import sha256
+from __future__ import annotations
+
+from agno.embedder.openai import OpenAIEmbedder
+
+from ai_content_agent.settings import get_settings
+
+
+_embedder = None
 
 
 def build_embedding_vector(text: str, dimensions: int = 12) -> list[float]:
-    digest = sha256(text.encode("utf-8")).digest()
-    values: list[float] = []
+    embedding = get_embedder().get_embedding(text)
+    if dimensions and len(embedding) > dimensions:
+        return [float(value) for value in embedding[:dimensions]]
+    return [float(value) for value in embedding]
 
-    for index in range(dimensions):
-        byte = digest[index % len(digest)]
-        values.append(round((byte / 255.0) * 2 - 1, 6))
 
-    return values
+def get_embedder():
+    global _embedder
+    if _embedder is None:
+        settings = get_settings()
+        if settings.embedding_provider == "openai":
+            _embedder = OpenAIEmbedder(
+                id=settings.embedding_model,
+                api_key=settings.openai_api_key,
+            )
+        elif settings.embedding_provider == "openai_compatible":
+            _embedder = OpenAIEmbedder(
+                id=settings.embedding_model,
+                api_key=settings.openai_compatible_api_key,
+                base_url=settings.openai_compatible_base_url,
+            )
+        else:
+            raise ValueError(
+                "Unsupported embedding provider. Use openai or openai_compatible."
+            )
+    return _embedder
+
+
+def set_embedder(embedder) -> None:
+    global _embedder
+    _embedder = embedder

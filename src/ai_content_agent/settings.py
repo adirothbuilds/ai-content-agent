@@ -10,6 +10,10 @@ SUPPORTED_LLM_PROVIDERS = {
     "gemini",
     "anthropic",
 }
+SUPPORTED_EMBEDDING_PROVIDERS = {
+    "openai",
+    "openai_compatible",
+}
 
 
 class Settings(BaseSettings):
@@ -108,6 +112,16 @@ class Settings(BaseSettings):
             raise ValueError(f"Unsupported LLM provider '{value}'. Expected one of: {supported}.")
         return value
 
+    @field_validator("embedding_provider")
+    @classmethod
+    def validate_embedding_provider(cls, value: str) -> str:
+        if value not in SUPPORTED_EMBEDDING_PROVIDERS:
+            supported = ", ".join(sorted(SUPPORTED_EMBEDDING_PROVIDERS))
+            raise ValueError(
+                f"Unsupported embedding provider '{value}'. Expected one of: {supported}."
+            )
+        return value
+
     @model_validator(mode="after")
     def validate_llm_credentials(self) -> "Settings":
         provider_credentials = {
@@ -138,6 +152,15 @@ class Settings(BaseSettings):
                 "anthropic": "ANTHROPIC_API_KEY",
             }[provider]
             raise ValueError(f"{env_key} requires {required_key}.")
+
+        if self.embedding_provider == "openai" and not self.openai_api_key:
+            raise ValueError("EMBEDDING_PROVIDER=openai requires OPENAI_API_KEY.")
+        if self.embedding_provider == "openai_compatible" and (
+            not self.openai_compatible_api_key or not self.openai_compatible_base_url
+        ):
+            raise ValueError(
+                "EMBEDDING_PROVIDER=openai_compatible requires OPENAI_COMPATIBLE_API_KEY and OPENAI_COMPATIBLE_BASE_URL."
+            )
 
         return self
 
