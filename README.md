@@ -49,18 +49,30 @@ The bootstrap service exposes `GET /health`.
 
 All runtime configuration is loaded from `.env`. Missing required values fail at startup with a configuration error.
 
+The service emits structured JSON logs and attaches `X-Request-ID`, `X-Trace-ID`, and `X-Run-ID` headers to HTTP responses. Incoming `X-Request-ID` values are preserved when provided by the caller.
+
 ## Docker Compose
 
-For local self-hosted deployment, the repo now includes `docker-compose.yml` for `mongodb`, `server`, and `cloudflared`.
+For containerized deployment, the repo now includes two Compose modes:
+
+- `dev`: `mongodb` + `server`
+- `prod`: `mongodb` + `server` + `cloudflared`
 
 ```bash
 cp .env.example .env
-docker compose up --build
+docker compose --profile dev up --build
+```
+
+For the production-style stack with Cloudflare Tunnel:
+
+```bash
+docker compose --profile prod up --build
 ```
 
 Notes:
 
 - `server` reads the same `.env` file as local development and expects `MONGODB_URI=mongodb://mongodb:27017`.
 - `mongodb` is available on the internal Compose network as `mongodb` and is also published locally on port `27017`.
-- `cloudflared` runs with `CLOUDFLARED_TUNNEL_TOKEN` from `.env`; set a real token and `PUBLIC_BASE_URL` before using Telegram webhooks.
+- Use the `dev` profile for local development when you do not need a public tunnel.
+- Use the `prod` profile only with a real `CLOUDFLARED_TUNNEL_TOKEN` and `PUBLIC_BASE_URL`.
 - The current bootstrap verifies startup configuration and serves `GET /health` on port `8000`.

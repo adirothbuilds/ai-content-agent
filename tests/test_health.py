@@ -3,6 +3,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from ai_content_agent.app import app
+from ai_content_agent.observability import REQUEST_ID_HEADER, RUN_ID_HEADER, TRACE_ID_HEADER
 from ai_content_agent.settings import reset_settings_cache
 
 
@@ -36,7 +37,10 @@ def test_health_check(monkeypatch) -> None:
 
     client = TestClient(app)
 
-    response = client.get("/health")
+    response = client.get("/health", headers={REQUEST_ID_HEADER: "health-req"})
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
+    assert response.headers[REQUEST_ID_HEADER] == "health-req"
+    assert response.headers[TRACE_ID_HEADER]
+    assert response.headers[RUN_ID_HEADER]

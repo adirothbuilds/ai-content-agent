@@ -1,5 +1,8 @@
 services:
   mongodb:
+    profiles:
+      - dev
+      - prod
     image: mongo:7
     restart: unless-stopped
     ports:
@@ -14,6 +17,9 @@ services:
       start_period: 10s
 
   server:
+    profiles:
+      - dev
+      - prod
     build:
       context: .
       dockerfile: Dockerfile
@@ -28,6 +34,8 @@ services:
 
   cloudflared:
     image: cloudflare/cloudflared:latest
+    profiles:
+      - prod
     restart: unless-stopped
     environment:
       TUNNEL_TOKEN: ${CLOUDFLARED_TUNNEL_TOKEN}
