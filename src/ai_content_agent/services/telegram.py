@@ -84,6 +84,11 @@ def _serialize_session(session) -> dict[str, object] | None:
             if session.pending_ai_entries is not None
             else None
         ),
+        "pending_ai_gaps": (
+            list(session.pending_ai_gaps)
+            if session.pending_ai_gaps is not None
+            else None
+        ),
         "status": session.status,
     }
 

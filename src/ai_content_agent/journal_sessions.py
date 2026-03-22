@@ -11,6 +11,7 @@ class JournalSession:
     current_step_index: int = 0
     entries: dict[str, str] = field(default_factory=dict)
     pending_ai_entries: dict[str, str] | None = None
+    pending_ai_gaps: list[str] | None = None
     ai_assisted: bool = False
     status: str = "collecting"
 
@@ -111,6 +112,7 @@ class JournalSessionStore:
             current_step_index=session.current_step_index,
             entries=dict(session.entries),
             pending_ai_entries=None,
+            pending_ai_gaps=None,
             ai_assisted=session.ai_assisted,
             status="confirmed",
         )
@@ -135,6 +137,7 @@ class JournalSessionStore:
             field_name: getattr(suggestion, field_name)
             for field_name, _ in JOURNAL_PROMPTS
         }
+        session.pending_ai_gaps = list(suggestion.gaps)
         session.status = "awaiting_ai_confirmation"
         return JournalSessionResult(
             action="ai_draft_ready",
@@ -160,6 +163,7 @@ class JournalSessionStore:
 
         session.entries = dict(session.pending_ai_entries)
         session.pending_ai_entries = None
+        session.pending_ai_gaps = None
         session.current_step_index = len(JOURNAL_PROMPTS)
         session.ai_assisted = True
         session.status = "ready_for_review"
@@ -190,6 +194,7 @@ class JournalSessionStore:
             )
 
         session.pending_ai_entries = None
+        session.pending_ai_gaps = None
         session.ai_assisted = False
         session.status = (
             "ready_for_review"
@@ -225,6 +230,7 @@ class JournalSessionStore:
             )
 
         session.pending_ai_entries = None
+        session.pending_ai_gaps = None
         session.ai_assisted = False
         field_name, _ = JOURNAL_PROMPTS[session.current_step_index]
         session.entries[field_name] = text
@@ -257,6 +263,8 @@ def _build_review_message(session: JournalSession) -> str:
         value = session.entries.get(field_name, "[missing]")
         lines.append(f"- {prompt} {value}")
     return "\n".join(lines)
+
+
 def _build_ai_review_message(session: JournalSession) -> str:
     assert session.pending_ai_entries is not None
 
@@ -278,6 +286,9 @@ def _build_ai_review_message(session: JournalSession) -> str:
 
 
 def _build_gap_lines(session: JournalSession) -> list[str]:
+    if session.pending_ai_gaps:
+        return [f"- {gap}" for gap in session.pending_ai_gaps]
+
     missing_fields = [
         prompt
         for field_name, prompt in JOURNAL_PROMPTS

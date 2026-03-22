@@ -46,7 +46,7 @@ def test_build_embedding_vector_uses_provider_embedder(monkeypatch) -> None:
     reset_settings_cache()
     set_embedder(FakeEmbedder())
 
-    vector = build_embedding_vector("hello", dimensions=0)
+    vector = build_embedding_vector("hello")
     set_embedder(None)
 
     assert vector == [0.1, 0.2, 0.3, 0.4]

@@ -84,10 +84,12 @@ def test_journal_session_ai_assist_requires_explicit_confirmation_before_save(
 
     assert ai_draft.action == "ai_draft_ready"
     assert "Gaps identified:" in ai_draft.message
+    assert "- What problem did you solve?" in ai_draft.message
     assert blocked_save.action == "confirmation_required"
     assert accepted.action == "ai_accepted"
     assert accepted.session is not None
     assert accepted.session.status == "ready_for_review"
+    assert accepted.session.pending_ai_gaps is None
 
     saved = store.save_session(chat_id=1)
     assert saved.action == "saved"

@@ -115,6 +115,46 @@ def test_writer_agent_returns_grounded_draft(monkeypatch) -> None:
     assert "grounded" in result["provenance_summary"].lower()
 
 
+def test_writer_agent_filters_unknown_source_document_ids(monkeypatch) -> None:
+    _set_environment(monkeypatch)
+    monkeypatch.setattr(
+        "ai_content_agent.agents.writer_agent.build_agno_agent",
+        lambda **_: object(),
+    )
+    monkeypatch.setattr(
+        "ai_content_agent.agents.writer_agent.run_agent",
+        lambda *_: SimpleNamespace(
+            content=type(
+                "WriterDraft",
+                (),
+                {
+                    "model_dump": lambda self: {
+                        "title": "Grounded LinkedIn Draft",
+                        "draft": "Here is a grounded post draft.",
+                        "source_document_ids": ["journal-1", "unknown-doc"],
+                        "provenance_summary": "Grounded in journal capture and GitHub sync work.",
+                    }
+                },
+            )()
+        ),
+    )
+
+    result = generate_writer_draft(
+        idea={
+            "title": "Ship with better context",
+            "angle": "Combining journal and repo signals",
+            "summary": "Use both sources together",
+            "source_document_ids": ["journal-1", "github-1"],
+        },
+        context_documents=[
+            {"document_id": "journal-1", "document_type": "journal_entry", "content": "Worked on capture flow."},
+            {"document_id": "github-1", "document_type": "github_activity", "content": "Commit: Add sync flow."},
+        ],
+    )
+
+    assert result["source_document_ids"] == ["journal-1"]
+
+
 def test_seo_agent_returns_enriched_draft(monkeypatch) -> None:
     _set_environment(monkeypatch)
     monkeypatch.setattr(

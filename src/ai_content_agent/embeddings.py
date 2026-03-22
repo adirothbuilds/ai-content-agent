@@ -8,9 +8,12 @@ from ai_content_agent.settings import get_settings
 _embedder = None
 
 
-def build_embedding_vector(text: str, dimensions: int = 12) -> list[float]:
+def build_embedding_vector(
+    text: str,
+    dimensions: int | None = None,
+) -> list[float]:
     embedding = get_embedder().get_embedding(text)
-    if dimensions and len(embedding) > dimensions:
+    if dimensions is not None and dimensions > 0 and len(embedding) > dimensions:
         return [float(value) for value in embedding[:dimensions]]
     return [float(value) for value in embedding]
 

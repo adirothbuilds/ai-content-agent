@@ -28,8 +28,14 @@ def generate_writer_draft(
         response_model=WriterDraft,
     )
     result = run_agent(agent, _build_prompt(idea, context_documents))
-    output = result.content
-    return output.model_dump()
+    output = result.content.model_dump()
+    output["source_document_ids"] = _validated_source_document_ids(
+        output["source_document_ids"],
+        context_documents,
+    )
+    if not output["source_document_ids"]:
+        raise ValueError("Writer Agent returned no valid source document IDs.")
+    return output
 
 
 def _build_prompt(
@@ -57,3 +63,15 @@ def _build_prompt(
             "\n\n".join(context_lines),
         ]
     )
+
+
+def _validated_source_document_ids(
+    source_document_ids: list[str],
+    context_documents: list[dict[str, object]],
+) -> list[str]:
+    valid_ids = {
+        str(document["document_id"])
+        for document in context_documents
+        if document.get("document_id")
+    }
+    return [str(value) for value in source_document_ids if str(value) in valid_ids]
