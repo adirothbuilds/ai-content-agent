@@ -41,6 +41,12 @@ def _handle_command(action: TelegramAction) -> dict[str, object]:
             chat_id=action.chat_id,
             user_id=action.user_id,
         )
+    elif action.command == "assist":
+        result = journal_session_store.assist_session(chat_id=action.chat_id)
+    elif action.command == "accept_ai":
+        result = journal_session_store.accept_ai_suggestion(chat_id=action.chat_id)
+    elif action.command == "reject_ai":
+        result = journal_session_store.reject_ai_suggestion(chat_id=action.chat_id)
     elif action.command == "review":
         result = journal_session_store.review_session(chat_id=action.chat_id)
     elif action.command == "save":
@@ -51,7 +57,7 @@ def _handle_command(action: TelegramAction) -> dict[str, object]:
         return {
             "action": "unsupported_command",
             "message": (
-                "Unsupported command. Use /journal, /review, /save, or /cancel."
+                "Unsupported command. Use /journal, /assist, /accept_ai, /reject_ai, /review, /save, or /cancel."
             ),
         }
 
@@ -71,5 +77,10 @@ def _serialize_session(session) -> dict[str, object] | None:
         "user_id": session.user_id,
         "current_step_index": session.current_step_index,
         "entries": dict(session.entries),
+        "pending_ai_entries": (
+            dict(session.pending_ai_entries)
+            if session.pending_ai_entries is not None
+            else None
+        ),
         "status": session.status,
     }

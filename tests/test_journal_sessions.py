@@ -53,3 +53,25 @@ def test_journal_session_cancel_clears_state() -> None:
 
     assert cancelled.action == "cancelled"
     assert after_cancel.action == "missing"
+
+
+def test_journal_session_ai_assist_requires_explicit_confirmation_before_save() -> None:
+    store = JournalSessionStore()
+    store.start_session(chat_id=1, user_id=2)
+    store.handle_message(chat_id=1, user_id=2, text="built webhook parsing")
+
+    ai_draft = store.assist_session(chat_id=1)
+    blocked_save = store.save_session(chat_id=1)
+    accepted = store.accept_ai_suggestion(chat_id=1)
+
+    assert ai_draft.action == "ai_draft_ready"
+    assert "Gaps identified:" in ai_draft.message
+    assert blocked_save.action == "confirmation_required"
+    assert accepted.action == "ai_accepted"
+    assert accepted.session is not None
+    assert accepted.session.status == "ready_for_review"
+
+    saved = store.save_session(chat_id=1)
+    assert saved.action == "saved"
+    assert saved.session is not None
+    assert saved.session.status == "confirmed"

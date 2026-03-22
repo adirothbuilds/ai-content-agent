@@ -62,7 +62,7 @@ def test_telegram_webhook_parses_command(monkeypatch) -> None:
         },
         "dispatch": {
             "action": "unsupported_command",
-            "message": "Unsupported command. Use /journal, /review, /save, or /cancel.",
+            "message": "Unsupported command. Use /journal, /assist, /accept_ai, /reject_ai, /review, /save, or /cancel.",
         },
     }
 
@@ -210,3 +210,84 @@ def test_telegram_webhook_runs_guided_journal_session(monkeypatch) -> None:
     assert save_response.status_code == 200
     assert save_response.json()["dispatch"]["action"] == "saved"
     assert save_response.json()["dispatch"]["session"]["status"] == "confirmed"
+
+
+def test_telegram_webhook_ai_assist_requires_confirmation(monkeypatch) -> None:
+    monkeypatch.setattr(Path, "is_file", lambda self: False)
+    for key, value in ENVIRONMENT.items():
+        monkeypatch.setenv(key, value)
+    reset_settings_cache()
+
+    client = TestClient(create_app())
+
+    client.post(
+        "/webhooks/telegram",
+        json={
+            "update_id": 40,
+            "message": {
+                "message_id": 50,
+                "text": "/journal",
+                "from": {"id": 100, "is_bot": False, "username": "adi"},
+                "chat": {"id": 456, "type": "private"},
+            },
+        },
+    )
+    client.post(
+        "/webhooks/telegram",
+        json={
+            "update_id": 41,
+            "message": {
+                "message_id": 51,
+                "text": "rough webhook notes",
+                "from": {"id": 100, "is_bot": False, "username": "adi"},
+                "chat": {"id": 456, "type": "private"},
+            },
+        },
+    )
+
+    assist_response = client.post(
+        "/webhooks/telegram",
+        json={
+            "update_id": 42,
+            "message": {
+                "message_id": 52,
+                "text": "/assist",
+                "from": {"id": 100, "is_bot": False, "username": "adi"},
+                "chat": {"id": 456, "type": "private"},
+            },
+        },
+    )
+    assert assist_response.status_code == 200
+    assert assist_response.json()["dispatch"]["action"] == "ai_draft_ready"
+    assert "Send /accept_ai to use this draft or /reject_ai to discard it." in assist_response.json()["dispatch"]["message"]
+
+    blocked_save = client.post(
+        "/webhooks/telegram",
+        json={
+            "update_id": 43,
+            "message": {
+                "message_id": 53,
+                "text": "/save",
+                "from": {"id": 100, "is_bot": False, "username": "adi"},
+                "chat": {"id": 456, "type": "private"},
+            },
+        },
+    )
+    assert blocked_save.status_code == 200
+    assert blocked_save.json()["dispatch"]["action"] == "confirmation_required"
+
+    accept_response = client.post(
+        "/webhooks/telegram",
+        json={
+            "update_id": 44,
+            "message": {
+                "message_id": 54,
+                "text": "/accept_ai",
+                "from": {"id": 100, "is_bot": False, "username": "adi"},
+                "chat": {"id": 456, "type": "private"},
+            },
+        },
+    )
+    assert accept_response.status_code == 200
+    assert accept_response.json()["dispatch"]["action"] == "ai_accepted"
+    assert accept_response.json()["dispatch"]["session"]["status"] == "ready_for_review"
