@@ -16,9 +16,8 @@ AI Content Agent is a Telegram-first, human-in-the-loop system for turning journ
 - Agno
 - FastAPI
 - MongoDB with document embeddings
-- OpenAI for Journal Assist and Idea Agent
-- Gemini for SEO Agent
-- Claude for Writer Agent and default Remix Agent
+- Task-routed LLM providers via `.env`
+- Direct support for OpenAI, OpenAI-compatible APIs, Gemini, and Anthropic
 - Cloudflare Tunnel
 - Docker Compose
 - optional NATS
@@ -48,6 +47,24 @@ ai-content-agent
 The bootstrap service exposes `GET /health`.
 
 All runtime configuration is loaded from `.env`. Missing required values fail at startup with a configuration error.
+
+LLM routing is task-centric. Each task picks its own provider and model through `.env`:
+
+- `IDEA_PROVIDER` / `IDEA_MODEL`
+- `JOURNAL_ASSIST_PROVIDER` / `JOURNAL_ASSIST_MODEL`
+- `SEO_PROVIDER` / `SEO_MODEL`
+- `WRITER_PROVIDER` / `WRITER_MODEL`
+- `REMIX_PROVIDER` / `REMIX_MODEL`
+
+Supported task providers are `openai`, `openai_compatible`, `gemini`, and `anthropic`.
+
+Provider credentials stay grouped by family:
+
+- `OPENAI_API_KEY`
+- `OPENAI_COMPATIBLE_API_KEY`
+- `OPENAI_COMPATIBLE_BASE_URL`
+- `GEMINI_API_KEY`
+- `ANTHROPIC_API_KEY`
 
 The service emits structured JSON logs and attaches `X-Request-ID`, `X-Trace-ID`, and `X-Run-ID` headers to HTTP responses. Incoming `X-Request-ID` values are preserved when provided by the caller.
 

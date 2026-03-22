@@ -143,11 +143,11 @@ This backlog mirrors `ROADMAP.md` and is intended to be copied into GitHub Issue
 ### 14. Build shared multi-provider LLM abstraction
 
 - Milestone: Agents and Content Generation
-- Summary/Scope: Implement the typed provider layer for OpenAI, Gemini, and Anthropic, with shared request and response models, configuration loading, and error normalization.
+- Summary/Scope: Implement the typed provider layer for OpenAI, OpenAI-compatible APIs, Gemini, and Anthropic, with shared request and response models, task-centric `.env` routing, configuration loading, and error normalization.
 - Dependencies: Implement environment-driven settings layer
 - Acceptance Criteria:
-  - OpenAI, Gemini, and Anthropic adapters conform to one internal interface.
-  - Provider configuration is driven by `.env`.
+  - OpenAI, OpenAI-compatible, Gemini, and Anthropic adapters conform to one internal interface.
+  - Provider and model selection is driven per task through `.env`.
   - Provider-specific failures are normalized consistently.
 
 ### 15. Implement Idea Agent with OpenAI

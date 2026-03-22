@@ -68,8 +68,8 @@ Deliver the multi-provider agent layer and generate grounded content from retrie
 
 **Deliverables**
 
-- Shared LLM abstraction for OpenAI, Gemini, and Anthropic
-- Journal Assist wiring to OpenAI
+- Shared task-routed LLM abstraction for OpenAI, OpenAI-compatible APIs, Gemini, and Anthropic
+- Journal Assist wiring through the shared provider layer
 - Idea Agent with OpenAI
 - Writer Agent with Claude
 - SEO Agent with Gemini
@@ -79,6 +79,7 @@ Deliver the multi-provider agent layer and generate grounded content from retrie
 **Done Criteria**
 
 - Each agent runs through the shared provider layer.
+- Provider and model selection is configurable per task through `.env`.
 - Idea generation returns 3 grounded ideas.
 - Writer, SEO, and Remix flows preserve factual intent and provenance.
 

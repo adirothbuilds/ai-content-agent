@@ -1,7 +1,15 @@
 from functools import lru_cache
 
-from pydantic import Field, ValidationError
+from pydantic import Field, ValidationError, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+SUPPORTED_LLM_PROVIDERS = {
+    "openai",
+    "openai_compatible",
+    "gemini",
+    "anthropic",
+}
 
 
 class Settings(BaseSettings):
@@ -38,22 +46,28 @@ class Settings(BaseSettings):
     github_token: str = Field(alias="GITHUB_TOKEN")
     github_username: str = Field(alias="GITHUB_USERNAME")
 
-    openai_api_key: str = Field(alias="OPENAI_API_KEY")
-    openai_idea_model: str = Field(alias="OPENAI_IDEA_MODEL")
-    openai_journal_assist_model: str = Field(
-        default="gpt-5-mini",
-        alias="OPENAI_JOURNAL_ASSIST_MODEL",
+    openai_api_key: str | None = Field(default=None, alias="OPENAI_API_KEY")
+    openai_compatible_api_key: str | None = Field(
+        default=None,
+        alias="OPENAI_COMPATIBLE_API_KEY",
     )
-
-    gemini_api_key: str = Field(alias="GEMINI_API_KEY")
-    gemini_seo_model: str = Field(alias="GEMINI_SEO_MODEL")
-
-    anthropic_api_key: str = Field(alias="ANTHROPIC_API_KEY")
-    anthropic_writer_model: str = Field(alias="ANTHROPIC_WRITER_MODEL")
-    anthropic_remix_model: str = Field(
-        default="claude-sonnet-4",
-        alias="ANTHROPIC_REMIX_MODEL",
+    openai_compatible_base_url: str | None = Field(
+        default=None,
+        alias="OPENAI_COMPATIBLE_BASE_URL",
     )
+    gemini_api_key: str | None = Field(default=None, alias="GEMINI_API_KEY")
+    anthropic_api_key: str | None = Field(default=None, alias="ANTHROPIC_API_KEY")
+
+    idea_provider: str = Field(alias="IDEA_PROVIDER")
+    idea_model: str = Field(alias="IDEA_MODEL")
+    journal_assist_provider: str = Field(alias="JOURNAL_ASSIST_PROVIDER")
+    journal_assist_model: str = Field(alias="JOURNAL_ASSIST_MODEL")
+    seo_provider: str = Field(alias="SEO_PROVIDER")
+    seo_model: str = Field(alias="SEO_MODEL")
+    writer_provider: str = Field(alias="WRITER_PROVIDER")
+    writer_model: str = Field(alias="WRITER_MODEL")
+    remix_provider: str = Field(alias="REMIX_PROVIDER")
+    remix_model: str = Field(alias="REMIX_MODEL")
 
     embedding_provider: str = Field(alias="EMBEDDING_PROVIDER")
     embedding_model: str = Field(alias="EMBEDDING_MODEL")
@@ -79,6 +93,58 @@ class Settings(BaseSettings):
         default=False,
         alias="TRACE_PAYLOAD_SAMPLING",
     )
+
+    @field_validator(
+        "idea_provider",
+        "journal_assist_provider",
+        "seo_provider",
+        "writer_provider",
+        "remix_provider",
+    )
+    @classmethod
+    def validate_llm_provider(cls, value: str) -> str:
+        if value not in SUPPORTED_LLM_PROVIDERS:
+            supported = ", ".join(sorted(SUPPORTED_LLM_PROVIDERS))
+            raise ValueError(f"Unsupported LLM provider '{value}'. Expected one of: {supported}.")
+        return value
+
+    @model_validator(mode="after")
+    def validate_llm_credentials(self) -> "Settings":
+        provider_credentials = {
+            "openai": bool(self.openai_api_key),
+            "openai_compatible": bool(self.openai_compatible_api_key)
+            and bool(self.openai_compatible_base_url),
+            "gemini": bool(self.gemini_api_key),
+            "anthropic": bool(self.anthropic_api_key),
+        }
+        task_providers = {
+            "IDEA_PROVIDER": self.idea_provider,
+            "JOURNAL_ASSIST_PROVIDER": self.journal_assist_provider,
+            "SEO_PROVIDER": self.seo_provider,
+            "WRITER_PROVIDER": self.writer_provider,
+            "REMIX_PROVIDER": self.remix_provider,
+        }
+
+        for env_key, provider in task_providers.items():
+            if provider_credentials[provider]:
+                continue
+            if provider == "openai_compatible":
+                raise ValueError(
+                    f"{env_key} requires OPENAI_COMPATIBLE_API_KEY and OPENAI_COMPATIBLE_BASE_URL."
+                )
+            required_key = {
+                "openai": "OPENAI_API_KEY",
+                "gemini": "GEMINI_API_KEY",
+                "anthropic": "ANTHROPIC_API_KEY",
+            }[provider]
+            raise ValueError(f"{env_key} requires {required_key}.")
+
+        return self
+
+    def llm_task_config(self, task: str) -> tuple[str, str]:
+        provider = getattr(self, f"{task}_provider")
+        model = getattr(self, f"{task}_model")
+        return provider, model
 
 
 @lru_cache(maxsize=1)

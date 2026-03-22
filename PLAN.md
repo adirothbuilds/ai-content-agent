@@ -39,9 +39,7 @@ AI Content Agent is a Telegram-first, human-in-the-loop LinkedIn content assista
 | Agent framework | Agno | Agent orchestration and typed workflows |
 | API/server | FastAPI | Telegram webhook host and internal control API |
 | Database | MongoDB | Canonical storage and vector-capable retrieval store |
-| LLM provider | OpenAI GPT | Journal Assist and Idea Agent |
-| LLM provider | Google Gemini | SEO Agent |
-| LLM provider | Anthropic Claude | Writer Agent and default Remix Agent |
+| LLM provider | OpenAI, OpenAI-compatible APIs, Gemini, Anthropic | Task-routed agent generation via `.env` |
 | Embeddings | Dedicated embedding model/API | Embeddings for retrieval-relevant records |
 | Eventing | NATS (optional) | Lightweight async event delivery where needed |
 | Ingress | Cloudflare Tunnel | Public HTTPS entrypoint for Telegram webhook |
@@ -119,15 +117,15 @@ AI Content Agent is a Telegram-first, human-in-the-loop LinkedIn content assista
 
 - Produces a LinkedIn draft based on the selected idea and retrieved source context.
 - Must preserve provenance to journal and GitHub inputs.
-- Default provider: Claude.
+- Default provider: Anthropic.
 
 ### Remix Agent
 
 - Revises an existing draft based on explicit user feedback from Telegram.
 - Must preserve facts while applying the requested changes.
-- Default provider: Claude.
+- Default provider: Anthropic.
 
-Provider assignment is configurable through `.env` and should remain benchmark-driven over time.
+Provider assignment is configurable per task through `.env` and should remain benchmark-driven over time.
 
 ## Memory and Retrieval Design
 
@@ -204,13 +202,20 @@ All runtime configuration must be controlled through `.env` in local and self-ho
 | `GITHUB_TOKEN` | Yes | `<secret>` | GitHub API token |
 | `GITHUB_USERNAME` | Yes | `adiroth` | GitHub username used for activity filtering |
 | `OPENAI_API_KEY` | Yes | `<secret>` | OpenAI API key |
-| `OPENAI_IDEA_MODEL` | Yes | `gpt-5` | Model used by Idea Agent |
-| `OPENAI_JOURNAL_ASSIST_MODEL` | No | `gpt-5-mini` | Model used by Journal Assist |
+| `OPENAI_COMPATIBLE_API_KEY` | No | `<secret>` | API key for OpenAI-compatible providers |
+| `OPENAI_COMPATIBLE_BASE_URL` | No | `https://provider.example` | Base URL for OpenAI-compatible providers |
 | `GEMINI_API_KEY` | Yes | `<secret>` | Gemini API key |
-| `GEMINI_SEO_MODEL` | Yes | `gemini-2.5-pro` | Model used by SEO Agent |
 | `ANTHROPIC_API_KEY` | Yes | `<secret>` | Anthropic API key |
-| `ANTHROPIC_WRITER_MODEL` | Yes | `claude-sonnet-4` | Model used by Writer Agent |
-| `ANTHROPIC_REMIX_MODEL` | No | `claude-sonnet-4` | Model used by Remix Agent |
+| `IDEA_PROVIDER` | Yes | `openai` | Provider used by Idea Agent |
+| `IDEA_MODEL` | Yes | `gpt-5` | Model used by Idea Agent |
+| `JOURNAL_ASSIST_PROVIDER` | Yes | `openai` | Provider used by Journal Assist |
+| `JOURNAL_ASSIST_MODEL` | Yes | `gpt-5-mini` | Model used by Journal Assist |
+| `SEO_PROVIDER` | Yes | `gemini` | Provider used by SEO Agent |
+| `SEO_MODEL` | Yes | `gemini-2.5-pro` | Model used by SEO Agent |
+| `WRITER_PROVIDER` | Yes | `anthropic` | Provider used by Writer Agent |
+| `WRITER_MODEL` | Yes | `claude-sonnet-4` | Model used by Writer Agent |
+| `REMIX_PROVIDER` | Yes | `anthropic` | Provider used by Remix Agent |
+| `REMIX_MODEL` | Yes | `claude-sonnet-4` | Model used by Remix Agent |
 | `EMBEDDING_PROVIDER` | Yes | `openai` | Embedding provider selector |
 | `EMBEDDING_MODEL` | Yes | `text-embedding-3-large` | Embedding model ID |
 | `RETRIEVAL_TOP_K` | No | `8` | Default retrieval top-K |
