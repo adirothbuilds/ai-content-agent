@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Header, HTTPException, status
 
+from ai_content_agent.services.telegram import dispatch_telegram_action
 from ai_content_agent.settings import get_settings
 from ai_content_agent.telegram import (
     TELEGRAM_SECRET_HEADER,
@@ -31,5 +32,10 @@ async def telegram_webhook(
         )
 
     action = parse_telegram_update(update)
+    dispatch_result = dispatch_telegram_action(action)
 
-    return {"ok": True, "action": action.model_dump()}
+    return {
+        "ok": True,
+        "update": action.model_dump(),
+        "dispatch": dispatch_result,
+    }

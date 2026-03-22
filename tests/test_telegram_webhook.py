@@ -52,13 +52,17 @@ def test_telegram_webhook_parses_command(monkeypatch) -> None:
     assert response.status_code == 200
     assert response.json() == {
         "ok": True,
-        "action": {
+        "update": {
             "type": "command",
             "chat_id": 123,
             "user_id": 99,
             "command": "start",
             "text": "/start hello",
             "update_id": 1,
+        },
+        "dispatch": {
+            "action": "unsupported_command",
+            "message": "Unsupported command. Use /journal, /review, /save, or /cancel.",
         },
     }
 
@@ -114,7 +118,7 @@ def test_telegram_webhook_accepts_matching_secret(monkeypatch) -> None:
     assert response.status_code == 200
     assert response.json() == {
         "ok": True,
-        "action": {
+        "update": {
             "type": "message",
             "chat_id": 456,
             "user_id": 100,
@@ -122,4 +126,87 @@ def test_telegram_webhook_accepts_matching_secret(monkeypatch) -> None:
             "text": "plain text",
             "update_id": 2,
         },
+        "dispatch": {
+            "action": "missing",
+            "message": "No active journal session. Send /journal to start one.",
+            "session": None,
+        },
     }
+
+
+def test_telegram_webhook_runs_guided_journal_session(monkeypatch) -> None:
+    monkeypatch.setattr(Path, "is_file", lambda self: False)
+    for key, value in ENVIRONMENT.items():
+        monkeypatch.setenv(key, value)
+    reset_settings_cache()
+
+    client = TestClient(create_app())
+
+    start_response = client.post(
+        "/webhooks/telegram",
+        json={
+            "update_id": 10,
+            "message": {
+                "message_id": 20,
+                "text": "/journal",
+                "from": {"id": 100, "is_bot": False, "username": "adi"},
+                "chat": {"id": 456, "type": "private"},
+            },
+        },
+    )
+    assert start_response.status_code == 200
+    assert start_response.json()["dispatch"]["action"] == "started"
+    assert start_response.json()["dispatch"]["message"] == "What did you work on?"
+
+    prompts = [
+        "Worked on Telegram flows",
+        "Users needed guided capture",
+        "FastAPI and Pydantic",
+        "State should stay outside the route",
+        "A reviewable journal draft",
+        "It improves capture quality",
+    ]
+
+    expected_next_messages = [
+        "What problem did you solve?",
+        "What tools or tech were involved?",
+        "What lesson did you learn?",
+        "What was the result or outcome?",
+        "Why does it matter?",
+    ]
+
+    for index, prompt in enumerate(prompts):
+        response = client.post(
+            "/webhooks/telegram",
+            json={
+                "update_id": 11 + index,
+                "message": {
+                    "message_id": 21 + index,
+                    "text": prompt,
+                    "from": {"id": 100, "is_bot": False, "username": "adi"},
+                    "chat": {"id": 456, "type": "private"},
+                },
+            },
+        )
+        assert response.status_code == 200
+        if index < len(expected_next_messages):
+            assert response.json()["dispatch"]["message"] == expected_next_messages[index]
+        else:
+            assert response.json()["dispatch"]["action"] == "review_ready"
+            assert "Send /save to confirm or /cancel to discard." in response.json()["dispatch"]["message"]
+
+    save_response = client.post(
+        "/webhooks/telegram",
+        json={
+            "update_id": 30,
+            "message": {
+                "message_id": 40,
+                "text": "/save",
+                "from": {"id": 100, "is_bot": False, "username": "adi"},
+                "chat": {"id": 456, "type": "private"},
+            },
+        },
+    )
+    assert save_response.status_code == 200
+    assert save_response.json()["dispatch"]["action"] == "saved"
+    assert save_response.json()["dispatch"]["session"]["status"] == "confirmed"
