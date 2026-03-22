@@ -18,6 +18,7 @@ class JournalSession:
     current_step_index: int = 0
     entries: dict[str, str] = field(default_factory=dict)
     pending_ai_entries: dict[str, str] | None = None
+    ai_assisted: bool = False
     status: str = "collecting"
 
 
@@ -58,6 +59,9 @@ class JournalSessionStore:
             message="Journal session cancelled.",
             session=None,
         )
+
+    def clear_session(self, chat_id: int) -> None:
+        self._sessions.pop(chat_id, None)
 
     def review_session(self, chat_id: int) -> JournalSessionResult:
         session = self._sessions.get(chat_id)
@@ -108,15 +112,15 @@ class JournalSessionStore:
                 session=session,
             )
 
-        session.status = "reviewed"
         saved_session = JournalSession(
             chat_id=session.chat_id,
             user_id=session.user_id,
             current_step_index=session.current_step_index,
             entries=dict(session.entries),
+            pending_ai_entries=None,
+            ai_assisted=session.ai_assisted,
             status="confirmed",
         )
-        self._sessions.pop(chat_id, None)
 
         return JournalSessionResult(
             action="saved",
@@ -160,6 +164,7 @@ class JournalSessionStore:
         session.entries = dict(session.pending_ai_entries)
         session.pending_ai_entries = None
         session.current_step_index = len(JOURNAL_PROMPTS)
+        session.ai_assisted = True
         session.status = "ready_for_review"
         return JournalSessionResult(
             action="ai_accepted",
@@ -188,6 +193,7 @@ class JournalSessionStore:
             )
 
         session.pending_ai_entries = None
+        session.ai_assisted = False
         session.status = (
             "ready_for_review"
             if session.current_step_index >= len(JOURNAL_PROMPTS)
@@ -222,6 +228,7 @@ class JournalSessionStore:
             )
 
         session.pending_ai_entries = None
+        session.ai_assisted = False
         field_name, _ = JOURNAL_PROMPTS[session.current_step_index]
         session.entries[field_name] = text
         session.user_id = user_id if user_id is not None else session.user_id

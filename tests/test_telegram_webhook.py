@@ -3,6 +3,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from ai_content_agent.app import create_app
+from ai_content_agent.services.journal_entries import set_journal_entry_repository
 from ai_content_agent.settings import reset_settings_cache
 from ai_content_agent.telegram import TELEGRAM_SECRET_HEADER
 
@@ -29,11 +30,20 @@ ENVIRONMENT = {
 }
 
 
+class FakeJournalEntryRepository:
+    def __init__(self) -> None:
+        self.documents: list[dict[str, object]] = []
+
+    def save(self, document) -> None:
+        self.documents.append(dict(document))
+
+
 def test_telegram_webhook_parses_command(monkeypatch) -> None:
     monkeypatch.setattr(Path, "is_file", lambda self: False)
     for key, value in ENVIRONMENT.items():
         monkeypatch.setenv(key, value)
     reset_settings_cache()
+    set_journal_entry_repository(FakeJournalEntryRepository())
 
     client = TestClient(create_app())
     response = client.post(
@@ -73,6 +83,7 @@ def test_telegram_webhook_rejects_invalid_secret(monkeypatch) -> None:
         monkeypatch.setenv(key, value)
     monkeypatch.setenv("TELEGRAM_WEBHOOK_SECRET", "expected-secret")
     reset_settings_cache()
+    set_journal_entry_repository(FakeJournalEntryRepository())
 
     client = TestClient(create_app())
     response = client.post(
@@ -99,6 +110,7 @@ def test_telegram_webhook_accepts_matching_secret(monkeypatch) -> None:
         monkeypatch.setenv(key, value)
     monkeypatch.setenv("TELEGRAM_WEBHOOK_SECRET", "expected-secret")
     reset_settings_cache()
+    set_journal_entry_repository(FakeJournalEntryRepository())
 
     client = TestClient(create_app())
     response = client.post(
@@ -139,6 +151,8 @@ def test_telegram_webhook_runs_guided_journal_session(monkeypatch) -> None:
     for key, value in ENVIRONMENT.items():
         monkeypatch.setenv(key, value)
     reset_settings_cache()
+    repository = FakeJournalEntryRepository()
+    set_journal_entry_repository(repository)
 
     client = TestClient(create_app())
 
@@ -210,6 +224,9 @@ def test_telegram_webhook_runs_guided_journal_session(monkeypatch) -> None:
     assert save_response.status_code == 200
     assert save_response.json()["dispatch"]["action"] == "saved"
     assert save_response.json()["dispatch"]["session"]["status"] == "confirmed"
+    assert save_response.json()["dispatch"]["journal_entry"]["document_type"] == "journal_entry"
+    assert save_response.json()["dispatch"]["journal_entry"]["metadata"]["ai_assisted"] is False
+    assert len(repository.documents) == 1
 
 
 def test_telegram_webhook_ai_assist_requires_confirmation(monkeypatch) -> None:
@@ -217,6 +234,8 @@ def test_telegram_webhook_ai_assist_requires_confirmation(monkeypatch) -> None:
     for key, value in ENVIRONMENT.items():
         monkeypatch.setenv(key, value)
     reset_settings_cache()
+    repository = FakeJournalEntryRepository()
+    set_journal_entry_repository(repository)
 
     client = TestClient(create_app())
 
@@ -291,3 +310,20 @@ def test_telegram_webhook_ai_assist_requires_confirmation(monkeypatch) -> None:
     assert accept_response.status_code == 200
     assert accept_response.json()["dispatch"]["action"] == "ai_accepted"
     assert accept_response.json()["dispatch"]["session"]["status"] == "ready_for_review"
+
+    save_response = client.post(
+        "/webhooks/telegram",
+        json={
+            "update_id": 45,
+            "message": {
+                "message_id": 55,
+                "text": "/save",
+                "from": {"id": 100, "is_bot": False, "username": "adi"},
+                "chat": {"id": 456, "type": "private"},
+            },
+        },
+    )
+    assert save_response.status_code == 200
+    assert save_response.json()["dispatch"]["action"] == "saved"
+    assert save_response.json()["dispatch"]["journal_entry"]["metadata"]["ai_assisted"] is True
+    assert len(repository.documents) == 1

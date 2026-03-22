@@ -75,3 +75,4 @@ def test_journal_session_ai_assist_requires_explicit_confirmation_before_save() 
     assert saved.action == "saved"
     assert saved.session is not None
     assert saved.session.status == "confirmed"
+    assert saved.session.ai_assisted is True

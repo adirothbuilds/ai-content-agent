@@ -1,4 +1,5 @@
 from ai_content_agent.journal_sessions import JournalSessionStore
+from ai_content_agent.services.journal_entries import persist_confirmed_journal_entry
 from ai_content_agent.telegram import TelegramAction
 
 
@@ -65,6 +66,7 @@ def _handle_command(action: TelegramAction) -> dict[str, object]:
         "action": result.action,
         "message": result.message,
         "session": _serialize_session(result.session),
+        **_build_persistence_payload(action, result),
     }
 
 
@@ -84,3 +86,15 @@ def _serialize_session(session) -> dict[str, object] | None:
         ),
         "status": session.status,
     }
+
+
+def _build_persistence_payload(
+    action: TelegramAction,
+    result,
+) -> dict[str, object]:
+    if result.action != "saved" or result.session is None or action.chat_id is None:
+        return {}
+
+    journal_entry = persist_confirmed_journal_entry(result.session)
+    journal_session_store.clear_session(action.chat_id)
+    return {"journal_entry": journal_entry}
