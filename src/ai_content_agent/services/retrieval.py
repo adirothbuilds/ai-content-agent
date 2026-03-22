@@ -98,4 +98,8 @@ def _infer_collection_name(document: Mapping[str, Any]) -> str:
         return "journal_entries"
     if document_type == "github_activity":
         return "github_activity"
+    if document_type == "draft_history":
+        return "draft_history"
+    if document_type == "post_history":
+        return "post_history"
     return "unknown"

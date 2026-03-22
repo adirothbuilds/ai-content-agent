@@ -30,14 +30,15 @@ AI Content Agent is a Telegram-first, human-in-the-loop system for turning journ
 
 ## Status
 
-The repo is implemented through milestone 4 / issue `#18`.
+The repo is implemented through milestone 5 / issue `#21`.
 
 Current state:
 
-- Telegram webhook and guided journal flow are implemented
+- Telegram webhook, guided journal flow, and AI-assisted journal completion are implemented
 - Journal Assist, Idea, Writer, SEO, and Remix are Agno-backed
-- journal entries and GitHub activity are persisted as retrieval-ready MongoDB documents
-- publish/finalize flow and Telegram idea-selection workflow are not implemented yet
+- journal entries, GitHub activity, draft history, and published post history are persisted as retrieval-ready MongoDB documents
+- Telegram now supports idea generation, idea selection, draft generation, remix, publish, and history browsing
+- the planned manual control endpoints for journal save, GitHub sync, idea generation, draft generation, remix, publish, and post history are available
 
 ## Local Development
 
@@ -90,7 +91,9 @@ What you can test at the current milestone:
 - `GET /health`
 - Telegram webhook parsing and guided journal flow
 - Journal Assist suggestion flow through `/assist`
-- Mongo-backed journal persistence
+- Telegram idea selection, draft generation, remix, publish, and history flow
+- manual control endpoints under `/journal-entries`, `/github/sync`, `/ideas/generate`, `/drafts/...`, and `/posts/history`
+- Mongo-backed journal, draft, and post persistence
 
 Start the app from source:
 
@@ -128,6 +131,110 @@ If you want to exercise `/assist` or save journal entries, your `.env` needs:
 - a real chat-model API key for the configured `JOURNAL_ASSIST_PROVIDER`
 - a real embedding API key/config for `EMBEDDING_PROVIDER`
 - a reachable MongoDB instance
+
+### Telegram Content Flow
+
+Milestone 5 adds these Telegram commands:
+
+- `/ideas [optional topic]`
+- `/select <number>`
+- `/draft`
+- `/remix <feedback>`
+- `/publish`
+- `/history`
+
+Example local flow:
+
+```bash
+curl -s http://127.0.0.1:8000/webhooks/telegram \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "update_id": 100,
+    "message": {
+      "message_id": 200,
+      "text": "/ideas webhook reliability",
+      "from": { "id": 100, "is_bot": false, "username": "adi" },
+      "chat": { "id": 456, "type": "private" }
+    }
+  }'
+```
+
+Then continue with the same `chat.id`:
+
+```bash
+curl -s http://127.0.0.1:8000/webhooks/telegram \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "update_id": 101,
+    "message": {
+      "message_id": 201,
+      "text": "/select 1",
+      "from": { "id": 100, "is_bot": false, "username": "adi" },
+      "chat": { "id": 456, "type": "private" }
+    }
+  }'
+```
+
+```bash
+curl -s http://127.0.0.1:8000/webhooks/telegram \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "update_id": 102,
+    "message": {
+      "message_id": 202,
+      "text": "/draft",
+      "from": { "id": 100, "is_bot": false, "username": "adi" },
+      "chat": { "id": 456, "type": "private" }
+    }
+  }'
+```
+
+After that you can use `/remix make it shorter`, `/publish`, and `/history`.
+
+If you want this flow to run end to end against real providers, your `.env` also needs:
+
+- real LLM credentials for the providers configured in `IDEA_PROVIDER`, `WRITER_PROVIDER`, `SEO_PROVIDER`, and `REMIX_PROVIDER`
+- a real embedding-capable provider for `EMBEDDING_PROVIDER`
+- a reachable MongoDB instance
+- a GitHub token with the permissions listed below if you want live GitHub sync in the idea flow
+
+### Manual Control Endpoints
+
+The FastAPI control surface now matches the plan:
+
+- `POST /journal-entries`
+- `POST /github/sync`
+- `POST /ideas/generate`
+- `POST /drafts/generate`
+- `POST /drafts/{draft_id}/remix`
+- `POST /posts/{draft_id}/publish`
+- `GET /posts/history`
+
+Example manual idea generation:
+
+```bash
+curl -s http://127.0.0.1:8000/ideas/generate \
+  -H 'Content-Type: application/json' \
+  -d '{"prompt":"workflow state and publish loops"}'
+```
+
+Example manual history lookup:
+
+```bash
+curl -s http://127.0.0.1:8000/posts/history
+```
+
+## Prompt Management
+
+Agent instructions and prompt builders are centralized in [`src/ai_content_agent/prompts.py`](src/ai_content_agent/prompts.py).
+
+That is intentional for the upcoming evaluation milestone:
+
+- prompt edits are versioned in one place
+- agent modules only own execution and validation logic
+- benchmark fixtures can later record prompt versions alongside model/provider results
+
+The current prompt registry already exposes a `version` per agent prompt, so later evaluation work can compare model changes without losing prompt provenance.
 
 ## GitHub Token Setup
 

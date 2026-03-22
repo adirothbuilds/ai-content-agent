@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 
 from ai_content_agent.agents.runtime import build_agno_agent, run_agent
 from ai_content_agent.llm import LlmTask
+from ai_content_agent.prompts import WRITER_AGENT_PROMPT, build_writer_agent_prompt
 
 
 class WriterDraft(BaseModel):
@@ -20,14 +21,13 @@ def generate_writer_draft(
 ) -> dict[str, object]:
     agent = build_agno_agent(
         task=LlmTask.WRITER,
-        instructions=[
-            "Write a LinkedIn draft grounded in the selected idea and source context.",
-            "Preserve factual accuracy and cite only provided source document IDs.",
-            "Do not invent achievements, metrics, or implementation details.",
-        ],
+        instructions=list(WRITER_AGENT_PROMPT.instructions),
         response_model=WriterDraft,
     )
-    result = run_agent(agent, _build_prompt(idea, context_documents))
+    result = run_agent(
+        agent,
+        build_writer_agent_prompt(idea=idea, context_documents=context_documents),
+    )
     output = result.content.model_dump()
     output["source_document_ids"] = _validated_source_document_ids(
         output["source_document_ids"],
@@ -35,34 +35,8 @@ def generate_writer_draft(
     )
     if not output["source_document_ids"]:
         raise ValueError("Writer Agent returned no valid source document IDs.")
+    output["prompt_version"] = WRITER_AGENT_PROMPT.version
     return output
-
-
-def _build_prompt(
-    idea: dict[str, object],
-    context_documents: list[dict[str, object]],
-) -> str:
-    context_lines = []
-    for document in context_documents:
-        context_lines.append(
-            "\n".join(
-                [
-                    f"ID: {document['document_id']}",
-                    f"Type: {document['document_type']}",
-                    f"Content: {document['content']}",
-                ]
-            )
-        )
-    return "\n\n".join(
-        [
-            f"Selected idea title: {idea['title']}",
-            f"Angle: {idea['angle']}",
-            f"Summary: {idea['summary']}",
-            f"Preferred source IDs: {', '.join(idea['source_document_ids'])}",
-            "Context documents:",
-            "\n\n".join(context_lines),
-        ]
-    )
 
 
 def _validated_source_document_ids(

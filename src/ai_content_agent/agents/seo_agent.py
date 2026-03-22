@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 
 from ai_content_agent.agents.runtime import build_agno_agent, run_agent
 from ai_content_agent.llm import LlmTask
+from ai_content_agent.prompts import SEO_AGENT_PROMPT, build_seo_agent_prompt
 
 
 class SeoRevision(BaseModel):
@@ -15,12 +16,10 @@ class SeoRevision(BaseModel):
 def generate_seo_revision(draft: str) -> dict[str, object]:
     agent = build_agno_agent(
         task=LlmTask.SEO,
-        instructions=[
-            "Improve LinkedIn draft visibility with formatting and relevant hashtags.",
-            "Do not change the factual meaning of the draft.",
-            "Keep the tone aligned with the original input.",
-        ],
+        instructions=list(SEO_AGENT_PROMPT.instructions),
         response_model=SeoRevision,
     )
-    result = run_agent(agent, f"Revise this draft for SEO without changing meaning:\n\n{draft}")
-    return result.content.model_dump()
+    result = run_agent(agent, build_seo_agent_prompt(draft))
+    output = result.content.model_dump()
+    output["prompt_version"] = SEO_AGENT_PROMPT.version
+    return output

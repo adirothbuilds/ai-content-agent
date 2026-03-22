@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 
 from ai_content_agent.agents.runtime import build_agno_agent, run_agent
 from ai_content_agent.llm import LlmTask
+from ai_content_agent.prompts import REMIX_AGENT_PROMPT, build_remix_agent_prompt
 
 
 class RemixDraft(BaseModel):
@@ -14,22 +15,10 @@ class RemixDraft(BaseModel):
 def generate_remix_draft(*, draft: str, feedback: str) -> dict[str, object]:
     agent = build_agno_agent(
         task=LlmTask.REMIX,
-        instructions=[
-            "Revise the draft using explicit user feedback.",
-            "Preserve the factual content unless the feedback directly asks for a removal or reframing.",
-            "Keep the revised output coherent and publication-ready.",
-        ],
+        instructions=list(REMIX_AGENT_PROMPT.instructions),
         response_model=RemixDraft,
     )
-    result = run_agent(
-        agent,
-        "\n\n".join(
-            [
-                "Original draft:",
-                draft,
-                "User feedback:",
-                feedback,
-            ]
-        ),
-    )
-    return result.content.model_dump()
+    result = run_agent(agent, build_remix_agent_prompt(draft=draft, feedback=feedback))
+    output = result.content.model_dump()
+    output["prompt_version"] = REMIX_AGENT_PROMPT.version
+    return output

@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 
 from ai_content_agent.agents.runtime import build_agno_agent, run_agent
 from ai_content_agent.llm import LlmTask
+from ai_content_agent.prompts import IDEA_AGENT_PROMPT, build_idea_agent_prompt
 from ai_content_agent.services.post_history import evaluate_idea_candidates
 from ai_content_agent.services.retrieval import retrieve_documents
 
@@ -55,15 +56,17 @@ def generate_idea_candidates(
 
     agent = build_agno_agent(
         task=LlmTask.IDEA,
-        instructions=[
-            "Generate distinct LinkedIn post ideas grounded in the provided source context.",
-            f"Return exactly {IDEA_AGENT_CANDIDATE_COUNT} ideas.",
-            "Each idea must cite one or more provided source document IDs.",
-            "Do not invent source IDs or unsupported facts.",
-        ],
+        instructions=list(IDEA_AGENT_PROMPT.instructions),
         response_model=IdeaBatch,
     )
-    result = run_agent(agent, _build_prompt(prompt, context_documents))
+    result = run_agent(
+        agent,
+        build_idea_agent_prompt(
+            user_prompt=prompt,
+            requested_count=IDEA_AGENT_CANDIDATE_COUNT,
+            context_documents=context_documents,
+        ),
+    )
     parsed_candidates = _parse_candidates(result.content, context_documents)
     ranked_candidates = _apply_post_history_ranking(parsed_candidates)
 
@@ -78,27 +81,9 @@ def generate_idea_candidates(
         "llm": {
             "model": result.model,
             "metrics": result.metrics,
+            "prompt_version": IDEA_AGENT_PROMPT.version,
         },
     }
-
-
-def _build_prompt(
-    prompt: str,
-    context_documents: list[dict[str, object]],
-) -> str:
-    blocks = [f"User prompt: {prompt}", "Context documents:"]
-    for document in context_documents:
-        blocks.append(
-            "\n".join(
-                [
-                    f"ID: {document['document_id']}",
-                    f"Type: {document['document_type']}",
-                    f"Score: {document['score']}",
-                    f"Content: {document['content']}",
-                ]
-            )
-        )
-    return "\n\n".join(blocks)
 
 
 def _parse_candidates(
