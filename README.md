@@ -48,3 +48,19 @@ ai-content-agent
 The bootstrap service exposes `GET /health`.
 
 All runtime configuration is loaded from `.env`. Missing required values fail at startup with a configuration error.
+
+## Docker Compose
+
+For local self-hosted deployment, the repo now includes `docker-compose.yml` for `mongodb`, `server`, and `cloudflared`.
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+Notes:
+
+- `server` reads the same `.env` file as local development and expects `MONGODB_URI=mongodb://mongodb:27017`.
+- `mongodb` is available on the internal Compose network as `mongodb` and is also published locally on port `27017`.
+- `cloudflared` runs with `CLOUDFLARED_TUNNEL_TOKEN` from `.env`; set a real token and `PUBLIC_BASE_URL` before using Telegram webhooks.
+- The current bootstrap verifies startup configuration and serves `GET /health` on port `8000`.
