@@ -51,6 +51,26 @@ All runtime configuration is loaded from `.env`. Missing required values fail at
 
 The service emits structured JSON logs and attaches `X-Request-ID`, `X-Trace-ID`, and `X-Run-ID` headers to HTTP responses. Incoming `X-Request-ID` values are preserved when provided by the caller.
 
+## GitHub Token Setup
+
+The GitHub activity tooling reads from the authenticated GitHub API using `GITHUB_TOKEN` and scopes activity to `GITHUB_USERNAME`.
+
+Recommended token setup:
+
+- Use a fine-grained personal access token.
+- Grant access only to the repositories you want the app to inspect.
+- Enable these repository permissions:
+  - `Metadata: Read`
+  - `Contents: Read`
+  - `Pull requests: Read`
+  - `Issues: Read`
+
+Notes:
+
+- If you want activity from private repositories, the token must be granted access to those private repositories explicitly.
+- Public-only activity can be tested with access limited to public repositories.
+- The current GitHub activity layer reads commits, pull requests, merged pull requests, and issues for the configured GitHub user.
+
 ## Docker Compose
 
 For containerized deployment, the repo now includes two Compose modes:
