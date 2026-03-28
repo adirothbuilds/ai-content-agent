@@ -53,7 +53,7 @@ def test_journal_assist_agent_returns_completed_draft(monkeypatch) -> None:
     )
     monkeypatch.setattr(
         "ai_content_agent.agents.journal_assist.run_agent",
-        lambda *_: SimpleNamespace(
+        lambda *_, **__: SimpleNamespace(
             content=JournalAssistDraft(
                 work_summary="Built webhook parsing.",
                 problem_solved="Webhook payloads were inconsistent.",
@@ -74,6 +74,26 @@ def test_journal_assist_agent_returns_completed_draft(monkeypatch) -> None:
     assert "What problem did you solve?" in draft.gaps
 
 
+def test_journal_assist_agent_coerces_json_string_output(monkeypatch) -> None:
+    _set_environment(monkeypatch)
+    monkeypatch.setattr(
+        "ai_content_agent.agents.journal_assist.build_agno_agent",
+        lambda **_: object(),
+    )
+    monkeypatch.setattr(
+        "ai_content_agent.agents.journal_assist.run_agent",
+        lambda *_, **__: SimpleNamespace(
+            content='{"work_summary":"Built webhook parsing.","problem_solved":"Webhook payloads were inconsistent.","tools_used":"FastAPI and Pydantic.","lesson_learned":"Keep parsing separate from routing.","outcome":"A stable webhook contract.","why_it_matters":"It keeps the Telegram UX grounded in real work.","gaps":["What problem did you solve?"]}'
+        ),
+    )
+
+    draft = generate_journal_assist_draft(
+        JournalSession(chat_id=1, user_id=2, entries={"work_summary": "built webhook parsing"})
+    )
+
+    assert draft.outcome == "A stable webhook contract."
+
+
 def test_writer_agent_returns_grounded_draft(monkeypatch) -> None:
     _set_environment(monkeypatch)
     monkeypatch.setattr(
@@ -82,7 +102,7 @@ def test_writer_agent_returns_grounded_draft(monkeypatch) -> None:
     )
     monkeypatch.setattr(
         "ai_content_agent.agents.writer_agent.run_agent",
-        lambda *_: SimpleNamespace(
+        lambda *_, **__: SimpleNamespace(
             content=type(
                 "WriterDraft",
                 (),
@@ -115,6 +135,65 @@ def test_writer_agent_returns_grounded_draft(monkeypatch) -> None:
     assert "grounded" in result["provenance_summary"].lower()
 
 
+def test_writer_agent_coerces_json_string_output(monkeypatch) -> None:
+    _set_environment(monkeypatch)
+    monkeypatch.setattr(
+        "ai_content_agent.agents.writer_agent.build_agno_agent",
+        lambda **_: object(),
+    )
+    monkeypatch.setattr(
+        "ai_content_agent.agents.writer_agent.run_agent",
+        lambda *_, **__: SimpleNamespace(
+            content='{"title":"Grounded LinkedIn Draft","draft":"Here is a grounded post draft.","source_document_ids":["journal-1","github-1"],"provenance_summary":"Grounded in journal capture and GitHub sync work."}'
+        ),
+    )
+
+    result = generate_writer_draft(
+        idea={
+            "title": "Ship with better context",
+            "angle": "Combining journal and repo signals",
+            "summary": "Use both sources together",
+            "source_document_ids": ["journal-1", "github-1"],
+        },
+        context_documents=[
+            {"document_id": "journal-1", "document_type": "journal_entry", "content": "Worked on capture flow."},
+            {"document_id": "github-1", "document_type": "github_activity", "content": "Commit: Add sync flow."},
+        ],
+    )
+
+    assert result["title"] == "Grounded LinkedIn Draft"
+
+
+def test_writer_agent_falls_back_to_plain_text_output(monkeypatch) -> None:
+    _set_environment(monkeypatch)
+    monkeypatch.setattr(
+        "ai_content_agent.agents.writer_agent.build_agno_agent",
+        lambda **_: object(),
+    )
+    monkeypatch.setattr(
+        "ai_content_agent.agents.writer_agent.run_agent",
+        lambda *_, **__: SimpleNamespace(
+            content="**How Checkpoints Changed My Creative Process**\n\nA grounded post draft."
+        ),
+    )
+
+    result = generate_writer_draft(
+        idea={
+            "title": "Ship with better context",
+            "angle": "Combining journal and repo signals",
+            "summary": "Use both sources together",
+            "source_document_ids": ["journal-1", "github-1"],
+        },
+        context_documents=[
+            {"document_id": "journal-1", "document_type": "journal_entry", "content": "Worked on capture flow."},
+            {"document_id": "github-1", "document_type": "github_activity", "content": "Commit: Add sync flow."},
+        ],
+    )
+
+    assert result["title"] == "How Checkpoints Changed My Creative Process"
+    assert result["source_document_ids"] == ["journal-1", "github-1"]
+
+
 def test_writer_agent_filters_unknown_source_document_ids(monkeypatch) -> None:
     _set_environment(monkeypatch)
     monkeypatch.setattr(
@@ -123,7 +202,7 @@ def test_writer_agent_filters_unknown_source_document_ids(monkeypatch) -> None:
     )
     monkeypatch.setattr(
         "ai_content_agent.agents.writer_agent.run_agent",
-        lambda *_: SimpleNamespace(
+        lambda *_, **__: SimpleNamespace(
             content=type(
                 "WriterDraft",
                 (),
@@ -163,7 +242,7 @@ def test_seo_agent_returns_enriched_draft(monkeypatch) -> None:
     )
     monkeypatch.setattr(
         "ai_content_agent.agents.seo_agent.run_agent",
-        lambda *_: SimpleNamespace(
+        lambda *_, **__: SimpleNamespace(
             content=type(
                 "SeoRevision",
                 (),
@@ -184,6 +263,24 @@ def test_seo_agent_returns_enriched_draft(monkeypatch) -> None:
     assert "meaning" in result["rationale"].lower()
 
 
+def test_seo_agent_falls_back_to_plain_text_output(monkeypatch) -> None:
+    _set_environment(monkeypatch)
+    monkeypatch.setattr(
+        "ai_content_agent.agents.seo_agent.build_agno_agent",
+        lambda **_: object(),
+    )
+    monkeypatch.setattr(
+        "ai_content_agent.agents.seo_agent.run_agent",
+        lambda *_, **__: SimpleNamespace(
+            content="Polished draft with cleaner formatting.\n\n#python #fastapi"
+        ),
+    )
+
+    result = generate_seo_revision("Original draft")
+
+    assert result["hashtags"] == ["#python", "#fastapi"]
+
+
 def test_remix_agent_returns_revised_draft(monkeypatch) -> None:
     _set_environment(monkeypatch)
     monkeypatch.setattr(
@@ -192,7 +289,7 @@ def test_remix_agent_returns_revised_draft(monkeypatch) -> None:
     )
     monkeypatch.setattr(
         "ai_content_agent.agents.remix_agent.run_agent",
-        lambda *_: SimpleNamespace(
+        lambda *_, **__: SimpleNamespace(
             content=type(
                 "RemixDraft",
                 (),
@@ -213,3 +310,25 @@ def test_remix_agent_returns_revised_draft(monkeypatch) -> None:
 
     assert "practical tone" in result["draft"].lower()
     assert "tightened" in result["change_summary"].lower()
+
+
+def test_remix_agent_falls_back_to_plain_text_output(monkeypatch) -> None:
+    _set_environment(monkeypatch)
+    monkeypatch.setattr(
+        "ai_content_agent.agents.remix_agent.build_agno_agent",
+        lambda **_: object(),
+    )
+    monkeypatch.setattr(
+        "ai_content_agent.agents.remix_agent.run_agent",
+        lambda *_, **__: SimpleNamespace(
+            content="Revised draft with a more practical tone."
+        ),
+    )
+
+    result = generate_remix_draft(
+        draft="Original draft",
+        feedback="Make it more practical and less reflective.",
+    )
+
+    assert "practical tone" in result["draft"].lower()
+    assert "more practical" in result["change_summary"].lower()

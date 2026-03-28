@@ -1,0 +1,39 @@
+{
+  "agent": "seo_agent",
+  "dataset_version": "v1",
+  "cases": [
+    {
+      "id": "seo_publish_loop_formatting",
+      "scenario": "Improve a publish-loop draft without changing its factual meaning.",
+      "tags": ["formatting", "non_destructive"],
+      "draft": "I built a Telegram-first publish workflow that stores drafts and post history in MongoDB. The result is a safer path from idea to publish with reviewable state and anti-duplication checks.",
+      "scoring": {
+        "required_hashtags": ["#mongodb", "#contentstrategy"],
+        "preserve_terms": ["Telegram-first", "MongoDB", "post history"],
+        "forbidden_terms": ["viral", "10x"]
+      }
+    },
+    {
+      "id": "seo_prompt_versioning",
+      "scenario": "Improve readability for a prompt-versioning post while preserving core meaning.",
+      "tags": ["hashtags", "formatting"],
+      "draft": "Prompt tuning should come after a baseline benchmark. Centralized prompt versions make reruns comparable and stop teams from guessing whether a change actually helped.",
+      "scoring": {
+        "required_hashtags": ["#promptengineering"],
+        "preserve_terms": ["baseline benchmark", "prompt versions"],
+        "forbidden_terms": ["SEO secrets", "growth hack"]
+      }
+    },
+    {
+      "id": "seo_truncation_detection",
+      "scenario": "Revise a draft about structured-output failures without returning an obviously truncated result.",
+      "tags": ["truncation", "plain_text"],
+      "draft": "The live smoke showed that Writer, SEO, and Remix can ignore structured output through OpenRouter. The right response is to measure fallback rates and truncation rather than hide the behavior.",
+      "scoring": {
+        "required_hashtags": ["#openrouter"],
+        "preserve_terms": ["structured output", "fallback", "OpenRouter"],
+        "forbidden_terms": ["AI will replace all writing"]
+      }
+    }
+  ]
+}

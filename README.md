@@ -224,6 +224,136 @@ Example manual history lookup:
 curl -s http://127.0.0.1:8000/posts/history
 ```
 
+## Dev Integration Tests
+
+The repo now has a dedicated dev integration suite that expects a real local MongoDB from the `dev` Compose profile.
+
+Start the dev stack:
+
+```bash
+docker compose --profile dev up -d
+```
+
+Run the regular fast suite:
+
+```bash
+make test
+```
+
+Run the real-Mongo integration suite:
+
+```bash
+make test-integration-dev
+```
+
+Notes:
+
+- `make test` excludes integration tests and stays fast.
+- `make test-integration-dev` uses `mongodb://127.0.0.1:27017` and a dedicated database named `ai_content_agent_integration`.
+- If local MongoDB is not running, the integration tests skip instead of failing.
+- The integration suite clears its own test database before each run and leaves the generated documents in place afterward so you can inspect them in Mongo UI.
+
+## Mongo UI
+
+The `dev` Compose profile now includes `mongo-express` so you can inspect Mongo data in the browser after running integration tests.
+
+- URL: `http://127.0.0.1:8081`
+- MongoDB target: the local `mongodb` service from Compose
+- Basic auth: disabled for local dev
+
+What you should see after a successful integration run:
+
+- `journal_entries`
+- `draft_history`
+- `post_history`
+- `post_checkpoints`
+
+## Live AI Smoke Test
+
+The repo also includes one opt-in live smoke test that calls your real configured providers for:
+
+- embeddings
+- Journal Assist
+- Idea Agent
+- Writer Agent
+- SEO Agent
+- Remix Agent
+
+Run it explicitly:
+
+```bash
+make test-live-ai
+```
+
+Notes:
+
+- it uses your real `.env` provider configuration
+- it will spend tokens
+- it writes a JSON report to `reports/live_ai/latest.json`
+- it uses fixed local context for retrieval/history so the live spend stays focused on the LLM and embedding calls
+
+The report includes:
+
+- provider/model settings per task
+- prompt versions
+- execution records per stage
+- structured-output expectation vs observed behavior
+- fallback usage
+- duration per stage
+- estimated cost per stage and total estimated run cost
+- each stage result payload
+- failure details if any stage breaks
+
+The live smoke is a provider sanity check, not a benchmark. It should stay small and opt-in.
+
+## Benchmarks
+
+Milestone 6 benchmark fixtures now live under [`evals/datasets`](evals/datasets). They cover:
+
+- Journal Assist
+- Idea Agent
+- Writer Agent
+- SEO Agent
+- Remix Agent
+
+Run the current-model benchmark suite:
+
+```bash
+make benchmark
+```
+
+Run one agent only:
+
+```bash
+make benchmark-journal
+make benchmark-idea
+make benchmark-writer
+make benchmark-seo
+make benchmark-remix
+```
+
+Regenerate the Markdown summary from the latest scored artifact:
+
+```bash
+make benchmark-report
+```
+
+Benchmark notes:
+
+- the runner executes the real Agno-backed agents, not isolated prompt snippets
+- raw outputs and scored outputs are written separately
+- reports are stored under `reports/benchmarks/<timestamp>/`
+- the latest run is mirrored under `reports/benchmarks/latest/`
+- scorecards include quality, latency, token usage, estimated cost, fallback rate, and structured-output adherence
+- prompt tuning should happen after capturing a baseline benchmark run, not before
+
+Relevant env vars:
+
+- `BENCHMARK_DATASET_PATH`
+- `BENCHMARK_OUTPUT_PATH`
+- `BENCHMARK_MAX_CASES`
+- `BENCHMARK_SOFT_BUDGET_USD`
+
 ## Prompt Management
 
 Agent instructions and prompt builders are centralized in [`src/ai_content_agent/prompts.py`](src/ai_content_agent/prompts.py).
@@ -260,7 +390,7 @@ Notes:
 
 For containerized deployment, the repo now includes two Compose modes:
 
-- `dev`: `mongodb` + `server`
+- `dev`: `mongodb` + `server` + `mongo-express`
 - `prod`: `mongodb` + `server` + `cloudflared`
 
 ```bash
@@ -278,6 +408,7 @@ Notes:
 
 - `server` reads the same `.env` file as local development and expects `MONGODB_URI=mongodb://mongodb:27017`.
 - `mongodb` is available on the internal Compose network as `mongodb` and is also published locally on port `27017`.
+- `mongo-express` is available in `dev` on `http://127.0.0.1:8081`.
 - Use the `dev` profile for local development when you do not need a public tunnel.
 - Use the `prod` profile only with a real `CLOUDFLARED_TUNNEL_TOKEN` and `PUBLIC_BASE_URL`.
 - The current bootstrap verifies startup configuration and serves `GET /health` on port `8000`.

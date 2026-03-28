@@ -1,0 +1,48 @@
+{
+  "agent": "journal_assist",
+  "dataset_version": "v1",
+  "cases": [
+    {
+      "id": "journal_partial_publish_loop",
+      "scenario": "Partial engineering notes about closing the Telegram publish loop.",
+      "tags": ["partial_notes", "completion_usefulness"],
+      "entries": {
+        "work_summary": "Built a Telegram-first publish workflow that stores drafts and post history in MongoDB.",
+        "problem_solved": "The earlier flow stopped before publish and had no durable record."
+      },
+      "scoring": {
+        "required_terms": ["Telegram", "publish", "MongoDB", "history"],
+        "forbidden_terms": ["PostgreSQL", "Redis"],
+        "expect_gaps": true
+      }
+    },
+    {
+      "id": "journal_under_specified_retrieval",
+      "scenario": "Under-specified notes that should be completed conservatively and leave gaps.",
+      "tags": ["under_specified", "follow_up_gap_detection"],
+      "entries": {
+        "work_summary": "Worked on better retrieval for content ideas.",
+        "tools_used": "MongoDB, embeddings"
+      },
+      "scoring": {
+        "required_terms": ["retrieval", "embeddings", "MongoDB"],
+        "forbidden_terms": ["Pinecone", "Supabase"],
+        "expect_gaps": true
+      }
+    },
+    {
+      "id": "journal_hallucination_guardrail",
+      "scenario": "Notes that mention only local persistence and should not invent external systems.",
+      "tags": ["hallucination_resistance"],
+      "entries": {
+        "work_summary": "Stored journal entries, drafts, and posts in MongoDB for review.",
+        "outcome": "A usable memory layer for the Telegram workflow."
+      },
+      "scoring": {
+        "required_terms": ["MongoDB", "journal", "drafts", "Telegram"],
+        "forbidden_terms": ["Kafka", "Snowflake", "Kubernetes"],
+        "expect_gaps": true
+      }
+    }
+  ]
+}

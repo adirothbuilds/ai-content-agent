@@ -93,6 +93,18 @@ class Settings(BaseSettings):
         default="./evals/datasets",
         alias="BENCHMARK_DATASET_PATH",
     )
+    benchmark_output_path: str = Field(
+        default="./reports/benchmarks",
+        alias="BENCHMARK_OUTPUT_PATH",
+    )
+    benchmark_max_cases: int | None = Field(
+        default=None,
+        alias="BENCHMARK_MAX_CASES",
+    )
+    benchmark_soft_budget_usd: float | None = Field(
+        default=None,
+        alias="BENCHMARK_SOFT_BUDGET_USD",
+    )
     trace_payload_sampling: bool = Field(
         default=False,
         alias="TRACE_PAYLOAD_SAMPLING",

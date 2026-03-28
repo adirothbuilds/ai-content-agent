@@ -1,0 +1,82 @@
+{
+  "agent": "writer_agent",
+  "dataset_version": "v1",
+  "cases": [
+    {
+      "id": "writer_grounded_publish_loop",
+      "scenario": "Write a grounded draft from selected idea plus journal and GitHub context.",
+      "tags": ["grounding", "readability"],
+      "idea": {
+        "title": "Ship the publish loop",
+        "angle": "Turn workflow state into product behavior",
+        "summary": "Explain how stored draft and post history closes the loop from capture to publish.",
+        "source_document_ids": ["journal-1", "github-1"]
+      },
+      "context_documents": [
+        {
+          "document_id": "journal-1",
+          "document_type": "journal_entry",
+          "content": "Worked on a Telegram-first publish workflow that stores drafts and post history in MongoDB."
+        },
+        {
+          "document_id": "github-1",
+          "document_type": "github_activity",
+          "content": "Commit: add publish checkpoints and recent-post history to avoid duplicate angles."
+        }
+      ],
+      "scoring": {
+        "required_terms": ["Telegram", "publish", "history"],
+        "forbidden_terms": ["five different apps", "viral", "10x"]
+      }
+    },
+    {
+      "id": "writer_prompt_versioning",
+      "scenario": "Draft should stay grounded in prompt-versioning and benchmark context.",
+      "tags": ["grounding", "repetition_avoidance"],
+      "idea": {
+        "title": "Prompt changes need evidence",
+        "angle": "Benchmark first, tune second",
+        "summary": "Show why prompt versions belong in reports before changing them.",
+        "source_document_ids": ["journal-2"]
+      },
+      "context_documents": [
+        {
+          "document_id": "journal-2",
+          "document_type": "journal_entry",
+          "content": "Centralized prompts in one registry so benchmarks can compare versions and reruns."
+        }
+      ],
+      "scoring": {
+        "required_terms": ["prompt", "benchmark", "version"],
+        "forbidden_terms": ["A/B test ads", "sales funnel"]
+      }
+    },
+    {
+      "id": "writer_plain_text_fallback_risk",
+      "scenario": "Case where plain-text responses are acceptable but should not truncate or invent sources.",
+      "tags": ["plain_text", "fallback"],
+      "idea": {
+        "title": "What the live smoke actually taught me",
+        "angle": "Use real provider runs to find structured-output failures",
+        "summary": "Share what the live smoke surfaced about fallback parsing and truncation risk.",
+        "source_document_ids": ["journal-3", "github-3"]
+      },
+      "context_documents": [
+        {
+          "document_id": "journal-3",
+          "document_type": "journal_entry",
+          "content": "The live smoke showed Writer, SEO, and Remix can return plain text through OpenRouter."
+        },
+        {
+          "document_id": "github-3",
+          "document_type": "github_activity",
+          "content": "Commit: add fallback tracking and model-call telemetry for Agno agent runs."
+        }
+      ],
+      "scoring": {
+        "required_terms": ["OpenRouter", "fallback", "plain text"],
+        "forbidden_terms": ["Kubernetes", "microservices"]
+      }
+    }
+  ]
+}

@@ -67,6 +67,9 @@ def test_settings_load_from_environment(monkeypatch) -> None:
     assert settings.post_history_similarity_threshold == 0.88
     assert settings.enable_provider_benchmarks is True
     assert settings.benchmark_dataset_path == "./evals/datasets"
+    assert settings.benchmark_output_path == "./reports/benchmarks"
+    assert settings.benchmark_max_cases is None
+    assert settings.benchmark_soft_budget_usd is None
     assert settings.trace_payload_sampling is False
 
 

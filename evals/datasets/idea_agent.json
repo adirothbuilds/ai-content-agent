@@ -1,0 +1,71 @@
+{
+  "agent": "idea_agent",
+  "dataset_version": "v1",
+  "cases": [
+    {
+      "id": "idea_grounded_publish_loop",
+      "scenario": "Generate grounded ideas from journal and GitHub publish-loop context.",
+      "tags": ["grounding", "distinctness"],
+      "prompt": "Generate grounded LinkedIn ideas from this publish workflow work.",
+      "context_documents": [
+        {
+          "document_id": "journal-1",
+          "document_type": "journal_entry",
+          "content": "Worked on a Telegram-first workflow that moves from journal capture to idea generation, drafting, remix, and publish.",
+          "score": 0.92
+        },
+        {
+          "document_id": "github-1",
+          "document_type": "github_activity",
+          "content": "Commit: persist post history and publish checkpoints so future ideas can avoid repeated angles.",
+          "score": 0.87
+        }
+      ],
+      "historical_topics": [
+        "How to use ChatGPT for LinkedIn post ideas",
+        "Why I keep notes in Apple Notes"
+      ]
+    },
+    {
+      "id": "idea_novelty_against_history",
+      "scenario": "Generate ideas that avoid repeating prior checkpoint/history angles.",
+      "tags": ["novelty", "post_history"],
+      "prompt": "Suggest fresh LinkedIn post ideas about memory, checkpoints, and grounded drafting.",
+      "context_documents": [
+        {
+          "document_id": "journal-2",
+          "document_type": "journal_entry",
+          "content": "Built retrieval across journal entries, GitHub activity, draft history, and post history.",
+          "score": 0.9
+        },
+        {
+          "document_id": "github-2",
+          "document_type": "github_activity",
+          "content": "Commit: add duplicate-post checks using semantic search over post history.",
+          "score": 0.84
+        }
+      ],
+      "historical_topics": [
+        "Why post history matters for avoiding duplicate LinkedIn posts",
+        "Semantic search to stop content repetition"
+      ]
+    },
+    {
+      "id": "idea_low_context_but_grounded",
+      "scenario": "Generate ideas from lighter context without inventing source IDs.",
+      "tags": ["low_context", "grounding"],
+      "prompt": "Generate grounded ideas about prompt versioning and benchmark-first tuning.",
+      "context_documents": [
+        {
+          "document_id": "journal-3",
+          "document_type": "journal_entry",
+          "content": "Centralized prompts so evaluation runs can compare versions before making changes.",
+          "score": 0.8
+        }
+      ],
+      "historical_topics": [
+        "Prompt engineering tricks for ChatGPT"
+      ]
+    }
+  ]
+}

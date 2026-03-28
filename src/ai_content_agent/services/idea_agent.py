@@ -4,8 +4,13 @@ from dataclasses import asdict, dataclass
 
 from pydantic import BaseModel, Field
 
-from ai_content_agent.agents.runtime import build_agno_agent, run_agent
-from ai_content_agent.llm import LlmTask
+from ai_content_agent.agents.runtime import (
+    build_agno_agent,
+    coerce_response_model_output,
+    run_agent,
+)
+from ai_content_agent.llm import LlmTask, resolve_task_config
+from ai_content_agent.model_telemetry import update_model_call_record
 from ai_content_agent.prompts import IDEA_AGENT_PROMPT, build_idea_agent_prompt
 from ai_content_agent.services.post_history import evaluate_idea_candidates
 from ai_content_agent.services.retrieval import retrieve_documents
@@ -54,11 +59,28 @@ def generate_idea_candidates(
     if not context_documents:
         raise IdeaAgentError("Idea Agent requires retrieved journal or GitHub context.")
 
+    return generate_idea_candidates_from_context(
+        prompt=prompt,
+        context_documents=context_documents,
+    )
+
+
+def generate_idea_candidates_from_context(
+    *,
+    prompt: str,
+    context_documents: list[dict[str, object]],
+    history_evaluator=None,
+) -> dict[str, object]:
+    if not context_documents:
+        raise IdeaAgentError("Idea Agent requires retrieved journal or GitHub context.")
+    resolved_history_evaluator = history_evaluator or evaluate_idea_candidates
+
     agent = build_agno_agent(
         task=LlmTask.IDEA,
         instructions=list(IDEA_AGENT_PROMPT.instructions),
         response_model=IdeaBatch,
     )
+    task_config = resolve_task_config(LlmTask.IDEA)
     result = run_agent(
         agent,
         build_idea_agent_prompt(
@@ -66,9 +88,26 @@ def generate_idea_candidates(
             requested_count=IDEA_AGENT_CANDIDATE_COUNT,
             context_documents=context_documents,
         ),
+        task=LlmTask.IDEA,
+        provider=task_config.provider.value,
+        model=task_config.model,
+        prompt_version=IDEA_AGENT_PROMPT.version,
+        structured_output_expected=True,
     )
-    parsed_candidates = _parse_candidates(result.content, context_documents)
-    ranked_candidates = _apply_post_history_ranking(parsed_candidates)
+    parsed_candidates = _parse_candidates(
+        coerce_response_model_output(result.content, IdeaBatch),
+        context_documents,
+    )
+    if getattr(result, "record_id", None):
+        update_model_call_record(
+            result.record_id,
+            structured_output_observed=True,
+            fallback_used=False,
+        )
+    ranked_candidates = _apply_post_history_ranking(
+        parsed_candidates,
+        history_evaluator=resolved_history_evaluator,
+    )
 
     if len(ranked_candidates) < IDEA_AGENT_FINAL_COUNT:
         raise IdeaAgentError("Idea Agent could not produce three grounded ideas.")
@@ -134,8 +173,11 @@ def _deduplicate_candidates(
 
 def _apply_post_history_ranking(
     candidates: list[IdeaCandidate],
+    *,
+    history_evaluator=None,
 ) -> list[IdeaCandidate]:
-    evaluations = evaluate_idea_candidates(
+    resolved_history_evaluator = history_evaluator or evaluate_idea_candidates
+    evaluations = resolved_history_evaluator(
         [
             "\n".join([candidate.title, candidate.angle, candidate.summary])
             for candidate in candidates

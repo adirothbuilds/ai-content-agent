@@ -1,0 +1,40 @@
+{
+  "agent": "remix_agent",
+  "dataset_version": "v1",
+  "cases": [
+    {
+      "id": "remix_make_opening_sharper",
+      "scenario": "Sharpen the opening of a publish-workflow draft without changing the facts.",
+      "tags": ["feedback_adherence", "factual_preservation"],
+      "draft": "I built a Telegram-first publish workflow that stores drafts and post history in MongoDB. It closes the loop from capture to publish and gives me a reviewable audit trail for every step.",
+      "feedback": "Make the opening sharper and more practical.",
+      "scoring": {
+        "preserve_terms": ["Telegram-first", "MongoDB", "publish"],
+        "required_terms": ["practical"]
+      }
+    },
+    {
+      "id": "remix_make_shorter",
+      "scenario": "Shorten a prompt-versioning draft while preserving the core argument.",
+      "tags": ["shorter", "improvement"],
+      "draft": "Prompt tuning should happen after a benchmark baseline exists. When prompt versions live in one registry, the team can rerun the same cases and see if the quality, latency, token usage, and cost actually improved.",
+      "feedback": "Make it shorter and more direct.",
+      "scoring": {
+        "preserve_terms": ["benchmark baseline", "prompt versions"],
+        "required_terms": ["direct"],
+        "should_reduce_length": true
+      }
+    },
+    {
+      "id": "remix_plain_text_fallback",
+      "scenario": "Revise a fallback-focused draft while keeping the OpenRouter lesson intact.",
+      "tags": ["plain_text", "fallback"],
+      "draft": "The live smoke proved that plain-text responses still happen. That is not a reason to hide the behavior. It is a reason to track fallback rates, truncation, and cost before changing prompts.",
+      "feedback": "Make it more practical for builders.",
+      "scoring": {
+        "preserve_terms": ["plain-text responses", "fallback rates", "cost"],
+        "required_terms": ["builders"]
+      }
+    }
+  ]
+}

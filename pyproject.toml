@@ -37,3 +37,7 @@ packages = ["src/ai_content_agent"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+  "integration: tests that require real local services such as the dev MongoDB instance",
+  "live_ai: smoke tests that call real LLM and embedding providers",
+]

@@ -50,6 +50,8 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
+reports/live_ai/
+reports/benchmarks/
 
 # Translations
 *.mo

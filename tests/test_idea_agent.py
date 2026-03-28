@@ -77,7 +77,7 @@ def test_generate_idea_candidates_returns_three_grounded_ideas(monkeypatch) -> N
     )
     monkeypatch.setattr(
         "ai_content_agent.services.idea_agent.run_agent",
-        lambda *_: SimpleNamespace(
+        lambda *_, **__: SimpleNamespace(
             content=IdeaBatch(
                 ideas=[
                     IdeaDraft(
@@ -162,7 +162,7 @@ def test_generate_idea_candidates_prefers_non_duplicate_history(monkeypatch) -> 
     )
     monkeypatch.setattr(
         "ai_content_agent.services.idea_agent.run_agent",
-        lambda *_: SimpleNamespace(
+        lambda *_, **__: SimpleNamespace(
             content=IdeaBatch(
                 ideas=[
                     IdeaDraft(

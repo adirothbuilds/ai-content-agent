@@ -32,6 +32,20 @@ services:
       mongodb:
         condition: service_healthy
 
+  mongo-express:
+    profiles:
+      - dev
+    image: mongo-express:1.0.2
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://mongodb:27017/
+      ME_CONFIG_BASICAUTH: "false"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
   cloudflared:
     image: cloudflare/cloudflared:latest
     profiles:
